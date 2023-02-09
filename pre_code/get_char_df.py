@@ -41,6 +41,7 @@ def page_raw_dict_reformat(vol, page, page_num, word_list):
          'line_wmode', 
          'line_dir', 
          'line_bbox', 
+         'span_num',
          'span_size',
          'span_flags', 
          'span_font', 
@@ -81,7 +82,9 @@ def page_raw_dict_reformat(vol, page, page_num, word_list):
             curr_line_dir = l['dir']
             curr_line_bbox = l['bbox']
             
-            for s in l['spans']:
+            for s_i in range(len(l['spans'])):
+                s = l['spans'][s_i]
+                span_num = s_i
                 span_size = s['size']
                 span_flags = s['flags']
                 span_font = s['font']
@@ -124,7 +127,8 @@ def page_raw_dict_reformat(vol, page, page_num, word_list):
                                 'line_wmode': curr_line_wmode,
                                 'line_dir': curr_line_dir,
                                 'line_bbox': curr_line_bbox,
-
+                                
+                                'span_num': span_num,
                                 'span_size': span_size,
                                 'span_flags': span_flags,
                                 'span_font': span_font,

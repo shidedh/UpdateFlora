@@ -95,9 +95,17 @@ def page_raw_dict_reformat(vol, page, page_num, word_list):
                 word_num = 0
                 span_word = ""
                 char_in_words = []
-                for c in span_chars:
+                
+                for span_char_i in range(len(span_chars)):
+                    c = span_chars[span_char_i]
                     char = c['c']
-                    if char.isspace() and len(span_word) > 0:
+
+                    if (span_char_i == len(span_chars) - 1): #to ensure that last character of the last word of the span is added 
+                        span_word += char
+                        char_in_words.append(c)
+
+                    if (span_char_i == len(span_chars) - 1) or \
+                        (char.isspace() and len(span_word) > 0): #if we are at the last character of span or have a white space 
                         #add word to dictionary
                         for c_i in range(len(char_in_words)):
                             char_num = c_i 
@@ -163,11 +171,11 @@ print("\nextracting volume 3")
 vol3_df = book_char_df("3", vol3_pages)
 
 print("\n\nSaving volume 1")
-vol1_df.to_csv("../input/char_df/vol1_df.csv")
+vol1_df.to_pickle("../input/char_df/vol1_df.pkl")
 
 print("Saving volume 2")
-vol2_df.to_csv("../input/char_df/vol2_df.csv")
+vol2_df.to_pickle("../input/char_df/vol2_df.pkl")
 
 print("Saving volume 3")
-vol3_df.to_csv("../input/char_df/vol3_df.csv")
+vol3_df.to_pickle("../input/char_df/vol3_df.pkl")
 # ---------------------------------------------------------------- #

@@ -82,6 +82,7 @@ def page_raw_dict_reformat(vol, page, page_num, word_list):
             curr_line_dir = l['dir']
             curr_line_bbox = l['bbox']
             
+            word_num = 0
             for s_i in range(len(l['spans'])):
                 s = l['spans'][s_i]
                 span_num = s_i
@@ -95,7 +96,6 @@ def page_raw_dict_reformat(vol, page, page_num, word_list):
                 span_origin = s['origin'] 
                 span_bbox = s['bbox']
                 
-                word_num = 0
                 span_word = ""
                 char_in_words = []
                 
@@ -138,7 +138,7 @@ def page_raw_dict_reformat(vol, page, page_num, word_list):
                                 'span_origin': span_origin,
                                 'span_bbox': span_bbox,
 
-                                'word_num': word_num,
+                                'word_num': word_num, #in the entire line
                                 'word': span_word,
 
                                 'char_num': c_i,

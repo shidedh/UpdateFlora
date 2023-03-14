@@ -164,15 +164,99 @@ def book_char_df(vol, pages):
     return pd.DataFrame(word_list)
 # ---------------------------------------------------------------- #
 
+
+# ------------------------- Process words ------------------------ #
+def process_words_in_place(vol_df, drop_coords = True):
+    #get word_bbox, prune_word -> word after pruning non-alphanumeric characters in a word (affects word_bbox)
+    print("get alphanumeric part of words ... ")
+    alnum_word = lambda word : ''.join(c for c in word if c.isalnum())
+    vol_df["pruned_word"] = vol_df["word"].apply(alnum_word)
+
+    print("setting word and character coordinates ...")
+    coords_str = ["char_x0", "char_y0", "char_x1", "char_y1"]
+    for i in range(len(coords_str)):
+        vol_df[coords_str[i]] = vol_df["char_bbox"].apply(lambda x: x[i])
+    
+    non_alnum_coord_toNaN = lambda r, col_result: r[col_result] if r["char"].isalnum() else np.NaN 
+    vol_df["pruned_char_x0"] = vol_df.apply(lambda r : non_alnum_coord_toNaN(r, "char_x0"), axis = 1)
+    vol_df["pruned_char_y0"] = vol_df.apply(lambda r : non_alnum_coord_toNaN(r, "char_y0"), axis = 1)
+    vol_df["pruned_char_x1"] = vol_df.apply(lambda r : non_alnum_coord_toNaN(r, "char_x1"), axis = 1)
+    vol_df["pruned_char_y1"] = vol_df.apply(lambda r : non_alnum_coord_toNaN(r, "char_y1"), axis = 1)
+
+    group_cols = vol_df.columns.difference(["char_num", "char", "char_origin", "char_bbox", "char_x0", "char_y0", "char_x1", "char_y1", "pruned_char_x0", "pruned_char_y0", "pruned_char_x1", "pruned_char_y1"], sort=False).tolist()
+    print("grouping the words ...")
+    #for each word get the coordinates of boundary box
+    vol_df["word_x0"] = vol_df.groupby(group_cols)['char_x0'].transform('min')
+    vol_df["word_y0"] = vol_df.groupby(group_cols)['char_y0'].transform('min')
+    vol_df["word_x1"] = vol_df.groupby(group_cols)['char_x1'].transform('max')
+    vol_df["word_y1"] = vol_df.groupby(group_cols)['char_y1'].transform('max')
+
+    vol_df["pruned_word_x0"] = vol_df.groupby(group_cols)['pruned_char_x0'].transform('min')
+    vol_df["pruned_word_y0"] = vol_df.groupby(group_cols)['pruned_char_y0'].transform('min')
+    vol_df["pruned_word_x1"] = vol_df.groupby(group_cols)['pruned_char_x1'].transform('max')
+    vol_df["pruned_word_y1"] = vol_df.groupby(group_cols)['pruned_char_y1'].transform('max')
+
+    print("getting bounding box tuples ...")
+    #from single coords to bbox tuples
+    vol_df["word_bbox"] = vol_df.apply(lambda r: (r["word_x0"], r["word_y0"], r["word_x1"], r["word_y1"]), axis = 1)
+    vol_df["pruned_word_bbox"] = vol_df.apply(lambda r: (r["pruned_word_x0"], r["pruned_word_y0"], r["pruned_word_x1"], r["pruned_word_y1"]), axis = 1)
+
+    if drop_coords:
+        print("dropping single coordinate columns ...")
+        vol_df.drop(columns= ["char_x0", "char_y0", "char_x1", "char_y1", 
+                              "word_x0", "word_y0", "word_x1", "word_y1",
+                              "pruned_char_x0", "pruned_char_y0", "pruned_char_x1", "pruned_char_y1",
+                              "pruned_word_x0", "pruned_word_y0", "pruned_word_x1", "pruned_word_y1"
+                             ], inplace = True)
+
+# ---------------------------------------------------------------- #
+
+
+# ----------------------- Order columns ---------------------- #
+# only useful when seeing the dataframe visually and is not necessary
+#      so can be removed
+def rearrange_cols(vol_df): 
+    vol_based =   [c for c in vol_df.columns if c.startswith("vol")]
+    page_based =  [c for c in vol_df.columns if c.startswith("page")]
+    block_based = [c for c in vol_df.columns if c.startswith("block")]
+    line_based =  [c for c in vol_df.columns if c.startswith("line")]
+    span_based =  [c for c in vol_df.columns if c.startswith("span")]
+    word_based =  [c for c in vol_df.columns if c.startswith("word")]
+    prune_based = [c for c in vol_df.columns if c.startswith("pruned")]
+    char_based =  [c for c in vol_df.columns if c.startswith("char")]
+
+    new_cols = vol_based + \
+               page_based + \
+               block_based + \
+               line_based + \
+               span_based + \
+               word_based + \
+               prune_based + \
+               char_based 
+    if len(new_cols) == len(vol_df.columns): 
+        print("columns successfully rearranged")
+        return vol_df[new_cols]
+    else: 
+        print("**WARNING** \n \t columns not rearranged")
+        return vol_df
+# ---------------------------------------------------------------- #
+
+
 # ----------------------- Extract And Save ----------------------- #
 print("\nextracting volume 1")
 vol1_df = book_char_df("1", vol1_pages)
+process_words_in_place(vol1_df)
+vol1_df = rearrange_cols(vol1_df)
 
 print("\nextracting volume 2")
 vol2_df = book_char_df("2", vol2_pages)
+process_words_in_place(vol2_df)
+vol2_df = rearrange_cols(vol2_df)
 
 print("\nextracting volume 3")
 vol3_df = book_char_df("3", vol3_pages)
+process_words_in_place(vol3_df)
+vol3_df = rearrange_cols(vol3_df)
 
 print("\n\nSaving volume 1")
 vol1_df.to_pickle("../input/char_df/vol1_df.pkl")

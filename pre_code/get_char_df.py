@@ -103,13 +103,16 @@ def page_raw_dict_reformat(vol, page, page_num, word_list):
                     c = span_chars[span_char_i]
                     char = c['c']
 
-                    if (span_char_i == len(span_chars) - 1): #to ensure that last character of the last word of the span is added 
-                        span_word += char
-                        char_in_words.append(c)
-
+                    # if we are at the last character of span or a white space character
+                    # add word to dictionary
                     if (span_char_i == len(span_chars) - 1) or \
-                        (char.isspace() and len(span_word) > 0): #if we are at the last character of span or have a white space 
-                        #add word to dictionary
+                        (char.isspace() and len(span_word) > 0): 
+
+                        if (span_char_i == len(span_chars) - 1) and (not char.isspace()): 
+                            #to ensure the last character in the span is added (if it's not a space)
+                            span_word += char
+                            char_in_words.append(c)
+
                         for c_i in range(len(char_in_words)):
                             char_num = c_i 
                             char_origin = char_in_words[c_i]['origin']
